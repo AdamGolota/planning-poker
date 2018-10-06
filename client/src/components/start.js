@@ -14,6 +14,11 @@ class Start extends Component {
         username: "",
         message: ""
     }
+
+    handleSubmit = {
+        
+    }
+
     handleChange = (e) => {
         let username = e.target.value;
         if (!isLiteral(username) && username) {
@@ -39,7 +44,7 @@ class Start extends Component {
 
     render() {
         return (
-            <Form>
+            <Form onSubmit={this.handleSubmit}>
                 <FormGroup>
                     <p>Username</p>
                     <Input
