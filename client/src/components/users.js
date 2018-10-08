@@ -1,48 +1,63 @@
 import React, {Component} from 'react';
+import uuid from 'uuid/v1';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {ListGroup, ListGroupItem} from 'reactstrap';
-import socket from './../api'
+import {sEmitGetUsers,sOnUsers,
+  sOnVotes, sOnNewUser, sOnVote, sOnUserDisconnected} from './../api';
 
 class Users extends Component {
   state =  {
+    users: [],
     votes: new Map()
   }
   componentDidMount(){
-    socket.on('new user', username => {
-      this.setState(state => state.votes.set(username, undefined))
+    sEmitGetUsers();
+
+    sOnUsers((users) => {
+      this.setState({users: users})
     });
 
-    socket.on('vote', vote => {
-      this.setState(state => {state.votes.get(vote.username).mark = vote.mark})
-    })
+    sOnVotes(votes => {
+      this.setState({votes: votes})
+    });
+
+    sOnNewUser(username => {
+      this.setState(state => state.users.push(username));
+    });
+    
+    sOnVote(vote => {
+      this.setState(state => state.votes.set(vote.username, vote.mark));
+    });
+    sOnUserDisconnected(username => {
+      this.setState(state =>{
+        let id = state.users.indexOf(username);
+        state.users.splice(id, 1);
+      });
+      this.forceUpdate();
+    });
   }
 
-  voteStatus = (vote) => {
+  voteStatus = (mark) => {
+    let status = 'Ready';
     if (this.props.showVotes) {
-      return (
-        <p>{vote.mark}</p>
-      )
+      status = <p>{mark}</p>
     }
-    else if (vote.mark === undefined){
-      return (
-        <p>Voting</p>
-      )
+    else if (mark === undefined){
+      status = 'Voting';
     }
-    else {
-      return (
-        <p>Ready</p>
-      )
-    }
+    return (<span>{status}</span>);
   }
 
   render() {
     return (
       <div>
+        <p>Users</p>
         <ListGroup>
-          {this.state.votes.forEach((vote) => {
+          {this.state.users.map((username) => {
+            let mark = this.state.votes.get(username);
             return(
-              <ListGroupItem>
-                {vote.username}: {this.voteStatus(vote)}
+              <ListGroupItem key={'user'+uuid()}>
+                {username}: {this.voteStatus(mark)}
               </ListGroupItem>
             )
           })}
